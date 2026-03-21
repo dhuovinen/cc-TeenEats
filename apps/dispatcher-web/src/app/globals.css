@@ -1,0 +1,90 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #252836;
+  --border: #2e3347;
+  --text: #e8eaf0;
+  --text-muted: #7b82a0;
+  --accent: #4f7cff;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --orange: #f97316;
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+input, select, textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  outline: none;
+  padding: 7px 10px;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+label { color: var(--text-muted); display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; margin-bottom: 4px; text-transform: uppercase; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.badge {
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+.badge-pending  { background: #1e2d40; color: var(--accent); }
+.badge-assigned { background: #1a2e1a; color: var(--green); }
+.badge-active   { background: #2a1f10; color: var(--orange); }
+.badge-completed { background: #14201a; color: #6ee7b7; }
+.badge-timed_out { background: #2a1515; color: var(--red); }
+.badge-cancelled { background: #1e1e1e; color: var(--text-muted); }
+
+.status-dot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+.dot-online  { background: var(--green); }
+.dot-busy    { background: var(--orange); }
+.dot-offline { background: var(--text-muted); }
+
+.btn-primary { background: var(--accent); color: #fff; padding: 8px 16px; }
+.btn-danger  { background: var(--red); color: #fff; padding: 6px 12px; }
+.btn-ghost   { background: var(--surface2); color: var(--text); padding: 8px 12px; border: 1px solid var(--border); }

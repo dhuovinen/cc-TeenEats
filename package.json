@@ -1,0 +1,14 @@
+{
+  "name": "teeneats",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "backend": "npm --workspace apps/backend run dev",
+    "dispatcher": "npm --workspace apps/dispatcher-web run dev",
+    "migrate": "npm --workspace apps/backend run migrate",
+    "seed": "npm --workspace apps/backend run seed"
+  }
+}

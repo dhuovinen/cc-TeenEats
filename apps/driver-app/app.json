@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "TeenEats Driver",
+    "slug": "teeneats-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.teeneats.driver",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "TeenEats needs your location to track active deliveries.",
+        "NSLocationAlwaysUsageDescription": "TeenEats needs your location for active delivery tracking."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.teeneats.driver",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow TeenEats to access your location during active deliveries."
+        }
+      ]
+    ],
+    "extra": {
+      "backendUrl": "http://localhost:4000"
+    }
+  }
+}
