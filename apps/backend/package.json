@@ -6,7 +6,16 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate": "ts-node src/migrate.ts",
-    "seed": "ts-node src/seed.ts"
+    "seed": "ts-node src/seed.ts",
+    "test": "jest --runInBand --forceExit",
+    "test:unit": "jest --runInBand --forceExit --testPathPattern=unit",
+    "test:integration": "jest --runInBand --forceExit --testPathPattern=integration"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["**/__tests__/**/*.test.ts"],
+    "setupFiles": ["dotenv/config"]
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -24,6 +33,11 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.10",
     "@types/pg": "^8.11.6",
+    "@types/jest": "^29.5.12",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.3",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.5.3"

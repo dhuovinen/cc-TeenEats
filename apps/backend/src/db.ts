@@ -1,5 +1,9 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 import dotenv from 'dotenv';
+
+// Return NUMERIC columns as JS floats (default is string to preserve precision,
+// but our ETA/score values are small decimals where float64 is fine).
+types.setTypeParser(types.builtins.NUMERIC, (val: string) => parseFloat(val));
 
 dotenv.config();
 
