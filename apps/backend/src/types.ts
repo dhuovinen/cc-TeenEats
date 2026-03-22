@@ -59,12 +59,18 @@ export interface Settings {
   request_timeout_seconds: number;
 }
 
-// Extend Express Request to carry authenticated driver
+// Extend Express Request to carry authenticated driver (alpha)
+// and authenticated user (v2 multi-role)
 declare global {
   namespace Express {
     interface Request {
+      // Alpha (single-role driver auth)
       driverId?: string;
       driverName?: string;
+      // v2 (multi-role)
+      userId?: string;
+      userRole?: import('./services/authV2').UserRole;
+      userName?: string;
     }
   }
 }

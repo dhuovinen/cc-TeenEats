@@ -7,6 +7,7 @@ import cors from 'cors';
 import { checkDbConnection } from './db';
 import { initSocket } from './socket';
 import authRouter from './routes/auth';
+import authV2Router from './routes/authV2';
 import driversRouter from './routes/drivers';
 import deliveriesRouter from './routes/deliveries';
 import settingsRouter from './routes/settings';
@@ -25,6 +26,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/auth/v2', authV2Router);
 app.use('/drivers', driversRouter);
 app.use('/deliveries', deliveriesRouter);
 app.use('/settings', settingsRouter);

@@ -8,23 +8,38 @@ import { db } from '../../db';
 import fs from 'fs';
 import path from 'path';
 
+const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
+
 export async function resetDb(): Promise<void> {
-  // Drop and recreate tables
+  // Drop all tables in reverse dependency order (v2 first, then alpha)
   await db.query(`
+    DROP TABLE IF EXISTS refresh_tokens CASCADE;
+    DROP TABLE IF EXISTS consent_tokens CASCADE;
+    DROP TABLE IF EXISTS driver_parent_links CASCADE;
+    DROP TABLE IF EXISTS admin_profiles CASCADE;
+    DROP TABLE IF EXISTS parent_profiles CASCADE;
+    DROP TABLE IF EXISTS customer_profiles CASCADE;
+    DROP TABLE IF EXISTS driver_profiles CASCADE;
+    DROP TABLE IF EXISTS users CASCADE;
     DROP TABLE IF EXISTS delivery_scores CASCADE;
     DROP TABLE IF EXISTS location_events CASCADE;
     DROP TABLE IF EXISTS deliveries CASCADE;
     DROP TABLE IF EXISTS drivers CASCADE;
     DROP TABLE IF EXISTS settings CASCADE;
+    DROP TABLE IF EXISTS schema_migrations CASCADE;
   `);
 
-  const sql = fs.readFileSync(
-    path.join(__dirname, '../../migrations/001_alpha_schema.sql'),
-    'utf-8'
-  );
-  await db.query(sql);
+  // Apply all migrations in order
+  const files = fs.readdirSync(MIGRATIONS_DIR)
+    .filter(f => f.endsWith('.sql'))
+    .sort();
 
-  // Seed 3 test drivers
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, file), 'utf-8');
+    await db.query(sql);
+  }
+
+  // Seed alpha test drivers (for backward compatibility with existing tests)
   const hash = await bcrypt.hash('password123', 1); // cost=1 for test speed
   await db.query(`
     INSERT INTO drivers (id, name, email, password_hash, status) VALUES
