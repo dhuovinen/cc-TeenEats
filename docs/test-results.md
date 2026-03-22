@@ -1,44 +1,51 @@
-# TeenEats Alpha — Test Results
+# TeenEats — Test Results
 
-**Date**: 2026-03-21
-**Build**: `claude/teeneats-architecture-plan-QN4jr`
+**Last updated**: 2026-03-22
+**Branch**: `mvp/module-01-foundation` (merged into `claude/teeneats-architecture-plan-QN4jr`)
 **Environment**: Linux, Node.js 22.22.0, PostgreSQL 16
 
 ---
 
-## Summary
+## Current Summary
 
-| Suite | Tests | Passed | Failed | Status |
-|---|---|---|---|---|
-| Unit: ETA service | 9 | 9 | 0 | ✅ PASS |
-| Unit: Scoring logic | 23 | 23 | 0 | ✅ PASS |
-| Integration: Auth | 6 | 6 | 0 | ✅ PASS |
-| Integration: Drivers | 11 | 11 | 0 | ✅ PASS |
-| Integration: Deliveries | 28 | 28 | 0 | ✅ PASS |
-| Integration: Settings | 10 | 10 | 0 | ✅ PASS |
-| **Total** | **87** | **87** | **0** | **✅ ALL PASS** |
+| Suite | Tests | Passed | Failed | Module | Status |
+|---|---|---|---|---|---|
+| Unit: ETA service | 9 | 9 | 0 | Alpha | ✅ PASS |
+| Unit: Scoring logic | 23 | 23 | 0 | Alpha | ✅ PASS |
+| Unit: Auth v2 service | 15 | 15 | 0 | MVP M1 | ✅ PASS |
+| Integration: Auth v1 | 6 | 6 | 0 | Alpha | ✅ PASS |
+| Integration: Auth v2 | 40 | 40 | 0 | MVP M1 | ✅ PASS |
+| Integration: Drivers | 11 | 11 | 0 | Alpha | ✅ PASS |
+| Integration: Deliveries | 28 | 28 | 0 | Alpha | ✅ PASS |
+| Integration: Settings | 10 | 10 | 0 | Alpha | ✅ PASS |
+| Integration: Restaurants | 45 | 45 | 0 | MVP M2 | ✅ PASS |
+| **Total** | **187** | **187** | **0** | | **✅ ALL PASS** |
 
 ---
 
-## Defects Found and Fixed During Testing
+## Run History
+
+| Date | Branch | Tests | Passed | Notes |
+|---|---|---|---|---|
+| 2026-03-21 | `claude/teeneats-architecture-plan-QN4jr` | 87 | 87 | Alpha suite complete |
+| 2026-03-22 | `mvp/module-01-foundation` | 142 | 142 | MVP Module 1 added (55 new tests) |
+| 2026-03-22 | `mvp/module-02-restaurants` | 187 | 187 | MVP Module 2 added (45 new tests) |
+
+---
+
+## Defects Found and Fixed
 
 ### DEF-001: NUMERIC type returned as string from PostgreSQL
-
-**Discovered in**: Integration test `POST /deliveries › valid request → 201, pending status, estimated_minutes > 0`
-
-**Symptom**: `expect("1.8").toBeGreaterThan(0)` — the `estimated_minutes` field was being serialized as a string by the `pg` library (default behavior for NUMERIC columns to preserve precision).
-
-**Impact**: Any API client reading `estimated_minutes` or `safety_score` as a number would get a string. In practice: the dispatcher web and driver app would both receive `"1.8"` instead of `1.8`, causing comparisons and displays to behave unexpectedly.
-
-**Fix**: Added a global type parser in `src/db.ts`:
-```typescript
-types.setTypeParser(types.builtins.NUMERIC, (val) => parseFloat(val));
-```
-All NUMERIC columns (`estimated_minutes`, `safety_score`) now return as JS floats. Float64 precision is sufficient for these values (ETA in minutes, score 0–100).
+**Module**: Alpha
+**Discovered in**: Integration test `POST /deliveries › valid request`
+**Symptom**: `expect("1.8").toBeGreaterThan(0)` — `estimated_minutes` serialized as string by the `pg` driver.
+**Impact**: API clients would receive `"1.8"` instead of `1.8` for numeric fields.
+**Fix**: Added global type parser in `src/db.ts` — `NUMERIC` columns now return JS floats.
+**Status**: ✅ Fixed
 
 ---
 
-## Automated Test Detail
+## Full Test Detail — Current Run (142 tests)
 
 ### Unit: ETA service (`src/__tests__/unit/eta.test.ts`)
 
@@ -82,7 +89,27 @@ All NUMERIC columns (`estimated_minutes`, `safety_score`) now return as JS float
 | Overall: all zeros → 0 | ✅ |
 | Overall: mixed realistic scenario → 86.7 | ✅ |
 
-### Integration: Auth (`src/__tests__/integration/auth.test.ts`)
+### Unit: Auth v2 service (`src/__tests__/unit/authV2.test.ts`) — MVP Module 1
+
+| Test | Result |
+|---|---|
+| validatePasswordStrength: valid password → null | ✅ |
+| validatePasswordStrength: too short → error | ✅ |
+| validatePasswordStrength: no uppercase → error | ✅ |
+| validatePasswordStrength: no number → error | ✅ |
+| validatePasswordStrength: exactly 8 chars valid → null | ✅ |
+| validatePasswordStrength: 7 chars otherwise valid → error | ✅ |
+| generateEmailToken: returns non-empty token | ✅ |
+| generateEmailToken: expires ~24h from now | ✅ |
+| generateEmailToken: two tokens are unique | ✅ |
+| generateConsentToken: returns non-empty token | ✅ |
+| generateConsentToken: expires ~72h from now | ✅ |
+| issueAccessToken: correct sub and role in payload | ✅ |
+| issueAccessToken: all four roles encode correctly | ✅ |
+| verifyAccessToken: expired token throws | ✅ |
+| verifyAccessToken: tampered token throws | ✅ |
+
+### Integration: Auth v1 (`src/__tests__/integration/auth.test.ts`)
 
 | Test | Result |
 |---|---|
@@ -92,6 +119,51 @@ All NUMERIC columns (`estimated_minutes`, `safety_score`) now return as JS float
 | Unknown email → 401 | ✅ |
 | Missing password → 400 | ✅ |
 | Empty body → 400 | ✅ |
+
+### Integration: Auth v2 (`src/__tests__/integration/authV2.test.ts`) — MVP Module 1
+
+| Test | Result |
+|---|---|
+| Register driver: valid → 201 with userId and dev tokens | ✅ |
+| Register driver: duplicate email → 409 | ✅ |
+| Register driver: weak password (no uppercase) → 400 | ✅ |
+| Register driver: weak password (too short) → 400 | ✅ |
+| Register driver: weak password (no number) → 400 | ✅ |
+| Register driver: under 16 years old → 400 | ✅ |
+| Register driver: parent_email same as driver → 400 | ✅ |
+| Register driver: missing required field → 400 | ✅ |
+| Register driver: invalid state code → 400 | ✅ |
+| Register driver: creates driver_profiles + consent_tokens records | ✅ |
+| Register customer: valid → 201 | ✅ |
+| Register customer: duplicate email → 409 | ✅ |
+| Register customer: weak password → 400 | ✅ |
+| Register customer: missing full_name → 400 | ✅ |
+| Verify email: valid token → 200, email_verified = true | ✅ |
+| Verify email: token already cleared → 400 | ✅ |
+| Verify email: invalid token → 400 | ✅ |
+| Consent: missing password/full_name → 400 | ✅ |
+| Consent: weak password → 400 | ✅ |
+| Consent: valid → 200, parent account created, driver consent_approved = true | ✅ |
+| Consent: already-used token → 400 | ✅ |
+| Consent: invalid token → 400 | ✅ |
+| Login: driver → 200 with role + driver profile fields | ✅ |
+| Login: customer → 200 with role=customer | ✅ |
+| Login: parent (post-consent) → 200 with role=parent | ✅ |
+| Login: wrong password → 401 | ✅ |
+| Login: unknown email → 401 | ✅ |
+| Login: missing fields → 400 | ✅ |
+| Login: deactivated account → 403 | ✅ |
+| Refresh: valid token → 200, new access + refresh tokens | ✅ |
+| Refresh: reused (rotated) token → 401 | ✅ |
+| Refresh: missing refreshToken → 400 | ✅ |
+| /me: driver → includes state, city, status, no password_hash | ✅ |
+| /me: customer → role=customer | ✅ |
+| /me: parent → includes linked_drivers array | ✅ |
+| /me: no token → 401 | ✅ |
+| /me: expired token → 401 | ✅ |
+| Logout: valid token → 200 | ✅ |
+| Logout: subsequent refresh fails → 401 | ✅ |
+| Logout: missing refreshToken → 400 | ✅ |
 
 ### Integration: Drivers (`src/__tests__/integration/drivers.test.ts`)
 
@@ -157,6 +229,56 @@ All NUMERIC columns (`estimated_minutes`, `safety_score`) now return as JS float
 | PUT /settings: missing key → 400 | ✅ |
 | PUT /settings: no dispatcher key → 401 | ✅ |
 
+### Integration: Restaurants (`src/__tests__/integration/restaurants.test.ts`) — MVP Module 2
+
+| Test | Result |
+|---|---|
+| GET /restaurants: empty list initially | ✅ |
+| GET /restaurants: returns only active restaurants | ✅ |
+| GET /restaurants: response shape has expected fields | ✅ |
+| GET /restaurants/:id: returns restaurant with hours + categories + items | ✅ |
+| GET /restaurants/:id: inactive restaurant → 404 | ✅ |
+| GET /restaurants/:id: unknown id → 404 | ✅ |
+| GET /restaurants/:id: unavailable items excluded from detail view | ✅ |
+| POST /restaurants: admin creates restaurant → 201 | ✅ |
+| POST /restaurants: missing required field (cuisine_type) → 400 | ✅ |
+| POST /restaurants: invalid lat (out of range) → 400 | ✅ |
+| POST /restaurants: invalid lng → 400 | ✅ |
+| POST /restaurants: non-admin (driver) → 403 | ✅ |
+| POST /restaurants: no auth → 401 | ✅ |
+| PUT /restaurants/:id: update name → 200, name changed | ✅ |
+| PUT /restaurants/:id: partial update — only supplied fields change | ✅ |
+| PUT /restaurants/:id: unknown restaurant → 404 | ✅ |
+| PUT /restaurants/:id: non-admin → 403 | ✅ |
+| DELETE /restaurants/:id: deactivate → 200, active=false | ✅ |
+| DELETE /restaurants/:id: deactivated not in public list | ✅ |
+| DELETE /restaurants/:id: unknown restaurant → 404 | ✅ |
+| POST hours: set hours → 200, returns hours array | ✅ |
+| POST hours: replace hours — second call overwrites first | ✅ |
+| POST hours: invalid day_of_week (7) → 400 | ✅ |
+| POST hours: open_time >= close_time → 400 | ✅ |
+| POST hours: hours is not an array → 400 | ✅ |
+| POST hours: non-admin → 403 | ✅ |
+| POST categories: add category → 201 | ✅ |
+| POST categories: missing name → 400 | ✅ |
+| PUT categories: update → 200, name updated | ✅ |
+| PUT categories: wrong restaurant → 404 | ✅ |
+| DELETE categories: → 200, deleted=true | ✅ |
+| DELETE categories: already-deleted → 404 | ✅ |
+| POST items: add item → 201 | ✅ |
+| POST items: missing price_cents → 400 | ✅ |
+| POST items: negative price_cents → 400 | ✅ |
+| POST items: non-integer price_cents → 400 | ✅ |
+| POST items: category from different restaurant → 404 | ✅ |
+| PUT menu-items/:id: update → 200 | ✅ |
+| PUT menu-items/:id: unknown item → 404 | ✅ |
+| PATCH availability: available=false → 200 | ✅ |
+| PATCH availability: available=true → 200 | ✅ |
+| PATCH availability: non-boolean → 400 | ✅ |
+| DELETE menu-items/:id: → 200, deleted=true | ✅ |
+| DELETE menu-items/:id: already-deleted → 404 | ✅ |
+| POST items: non-admin → 403 | ✅ |
+
 ---
 
 ## Not Automated (Manual Tests Required)
@@ -165,9 +287,9 @@ See [test-plan.md](test-plan.md) sections 4, 5, and 6 for:
 
 | Area | Reason |
 |---|---|
-| Dispatcher web UI (DW-01 through DW-14) | Requires browser; Playwright tests are post-alpha scope |
-| Driver app screens (DA-01 through DA-16) | Requires iOS/Android simulator; Detox tests are post-alpha scope |
-| Socket.io event delivery | Functional validation covered indirectly by integration tests; dedicated socket event tests are post-alpha scope |
+| Dispatcher web UI (DW-01 through DW-14) | Requires browser; Playwright tests post-MVP |
+| Driver app screens (DA-01 through DA-16) | Requires iOS/Android simulator; Detox tests post-MVP |
+| Socket.io event delivery | Dedicated socket tests post-MVP |
 | End-to-end scenarios (E2E-01 through E2E-05) | Requires both apps running simultaneously |
 | Push notifications | Requires APNs/FCM credentials + physical device |
 
@@ -176,9 +298,14 @@ See [test-plan.md](test-plan.md) sections 4, 5, and 6 for:
 ## How to Reproduce
 
 ```bash
-# Start PostgreSQL and create test database
-createdb teeneats_test
-psql -d teeneats_test -c "GRANT ALL ON SCHEMA public TO teeneats_test;"
+# Prerequisites: PostgreSQL 16 running
+
+# Create test database (first time only)
+sudo -u postgres createdb teeneats_test
+sudo -u postgres psql -d teeneats_test -c \
+  "CREATE USER teeneats_test WITH PASSWORD 'testpass'; \
+   GRANT ALL ON DATABASE teeneats_test TO teeneats_test; \
+   GRANT ALL ON SCHEMA public TO teeneats_test;"
 
 # Run all tests
 cd apps/backend
@@ -192,4 +319,7 @@ npm run test:unit
 
 # Integration tests only
 npm run test:integration
+
+# Specific module
+npm test -- --testPathPattern=authV2
 ```

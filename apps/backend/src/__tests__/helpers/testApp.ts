@@ -11,6 +11,7 @@ import authV2Router from '../../routes/authV2';
 import driversRouter from '../../routes/drivers';
 import deliveriesRouter from '../../routes/deliveries';
 import settingsRouter from '../../routes/settings';
+import restaurantsRouter from '../../routes/restaurants';
 
 export function buildApp() {
   const app = express();
@@ -23,6 +24,7 @@ export function buildApp() {
   app.use('/drivers', driversRouter);
   app.use('/deliveries', deliveriesRouter);
   app.use('/settings', settingsRouter);
+  app.use('/restaurants', restaurantsRouter);
 
   const httpServer = http.createServer(app);
   initSocket(httpServer);
