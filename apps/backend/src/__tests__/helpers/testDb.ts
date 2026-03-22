@@ -13,6 +13,9 @@ const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export async function resetDb(): Promise<void> {
   // Drop all tables in reverse dependency order (v2 first, then alpha)
   await db.query(`
+    DROP TABLE IF EXISTS delivery_sessions CASCADE;
+    DROP TABLE IF EXISTS order_items CASCADE;
+    DROP TABLE IF EXISTS orders CASCADE;
     DROP TABLE IF EXISTS refresh_tokens CASCADE;
     DROP TABLE IF EXISTS consent_tokens CASCADE;
     DROP TABLE IF EXISTS driver_parent_links CASCADE;
@@ -31,6 +34,14 @@ export async function resetDb(): Promise<void> {
     DROP TABLE IF EXISTS restaurant_hours CASCADE;
     DROP TABLE IF EXISTS restaurants CASCADE;
     DROP TABLE IF EXISTS schema_migrations CASCADE;
+  `);
+
+  // Ensure migration tracking table exists before running migrations
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      filename TEXT PRIMARY KEY,
+      run_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
   `);
 
   // Apply all migrations in order
