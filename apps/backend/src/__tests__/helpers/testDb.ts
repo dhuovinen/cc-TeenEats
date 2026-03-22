@@ -13,6 +13,9 @@ const MIGRATIONS_DIR = path.join(__dirname, '../../migrations');
 export async function resetDb(): Promise<void> {
   // Drop all tables in reverse dependency order (v2 first, then alpha)
   await db.query(`
+    DROP TABLE IF EXISTS compliance_violations CASCADE;
+    DROP TABLE IF EXISTS work_sessions CASCADE;
+    DROP TABLE IF EXISTS compliance_rules CASCADE;
     DROP TABLE IF EXISTS delivery_sessions CASCADE;
     DROP TABLE IF EXISTS order_items CASCADE;
     DROP TABLE IF EXISTS orders CASCADE;

@@ -25,6 +25,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { requireAuthV2, requireRole } from '../middleware/authV2';
+import { canStartSession, recordWorkTime, logViolation } from '../services/compliance';
 
 const router = Router();
 
@@ -288,6 +289,22 @@ router.post('/:id/ready', requireAuthV2, requireRole('admin'), async (req: Reque
 router.post('/:id/accept', requireAuthV2, requireRole('driver'), async (req: Request, res: Response) => {
   const driver_id = req.userId!;
   try {
+    // Compliance check: enforce minor labor law hour caps and curfews
+    const compliance = await canStartSession(driver_id);
+    if (!compliance.allowed) {
+      // Log the blocked attempt
+      const { rows: [profile] } = await db.query(
+        'SELECT state FROM driver_profiles WHERE user_id = $1',
+        [driver_id]
+      );
+      await logViolation(driver_id, compliance, profile?.state ?? '??');
+      res.status(403).json({
+        error: 'Compliance block: cannot accept orders at this time',
+        compliance,
+      });
+      return;
+    }
+
     // Race-condition safe: use UPDATE with WHERE clause, check rows updated
     const { rows, rowCount } = await db.query(
       `UPDATE orders
@@ -381,6 +398,13 @@ router.post('/:id/deliver', requireAuthV2, requireRole('driver'), async (req: Re
     );
 
     await db.query('COMMIT');
+
+    // Record work time for compliance tracking (outside transaction)
+    if (duration_minutes && Number.isFinite(duration_minutes)) {
+      recordWorkTime(order.driver_id, duration_minutes).catch(err =>
+        console.error('[orders] recordWorkTime error:', err)
+      );
+    }
     res.json({ order: updated });
   } catch (err) {
     await db.query('ROLLBACK');
