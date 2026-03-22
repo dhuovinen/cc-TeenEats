@@ -26,6 +26,10 @@ export async function resetDb(): Promise<void> {
     DROP TABLE IF EXISTS deliveries CASCADE;
     DROP TABLE IF EXISTS drivers CASCADE;
     DROP TABLE IF EXISTS settings CASCADE;
+    DROP TABLE IF EXISTS menu_items CASCADE;
+    DROP TABLE IF EXISTS menu_categories CASCADE;
+    DROP TABLE IF EXISTS restaurant_hours CASCADE;
+    DROP TABLE IF EXISTS restaurants CASCADE;
     DROP TABLE IF EXISTS schema_migrations CASCADE;
   `);
 
