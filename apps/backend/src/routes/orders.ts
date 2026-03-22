@@ -26,6 +26,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { requireAuthV2, requireRole } from '../middleware/authV2';
 import { canStartSession, recordWorkTime, logViolation } from '../services/compliance';
+import { finalizeSessionScore } from '../services/scoringV1';
 
 const router = Router();
 
@@ -322,13 +323,13 @@ router.post('/:id/accept', requireAuthV2, requireRole('driver'), async (req: Req
       return;
     }
 
-    // Create delivery session
-    await db.query(
-      `INSERT INTO delivery_sessions (order_id, driver_id) VALUES ($1, $2)`,
+    // Create delivery session; return its id so driver app can submit scoring events
+    const { rows: [deliverySession] } = await db.query(
+      `INSERT INTO delivery_sessions (order_id, driver_id) VALUES ($1, $2) RETURNING id`,
       [req.params.id, driver_id]
     );
 
-    res.json({ order: rows[0] });
+    res.json({ order: rows[0], delivery_session_id: deliverySession.id });
   } catch (err) {
     console.error('[orders] accept error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -403,6 +404,17 @@ router.post('/:id/deliver', requireAuthV2, requireRole('driver'), async (req: Re
     if (duration_minutes && Number.isFinite(duration_minutes)) {
       recordWorkTime(order.driver_id, duration_minutes).catch(err =>
         console.error('[orders] recordWorkTime error:', err)
+      );
+    }
+
+    // Finalize session safety score (outside transaction — best effort)
+    const { rows: [ds] } = await db.query(
+      'SELECT id FROM delivery_sessions WHERE order_id = $1',
+      [order.id]
+    );
+    if (ds) {
+      finalizeSessionScore(ds.id).catch(err =>
+        console.error('[orders] finalizeSessionScore error:', err)
       );
     }
     res.json({ order: updated });

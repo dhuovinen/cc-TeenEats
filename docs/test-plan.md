@@ -449,6 +449,47 @@ Pure function tests (no DB/HTTP).
 
 ---
 
+### 2.9 Safety Scoring v1 Tests — MVP Module 5
+
+#### Unit Tests (`unit/scoringV1.test.ts`) — 44 tests
+
+Pure function tests (no DB/HTTP), reference: docs/scoring.md.
+
+| Group | # Tests | Description |
+|---|---|---|
+| `kphToMph` | 3 | 0, 100, 16.09 kph conversions |
+| `classifySpeedViolation` | 8 | 0/negative → none; 1/10 → low (-3); 11/20 → medium (-8); 21/50 → high (-20) |
+| `classifyBrakingPenalty` | 7 | Below 0.4g → 0; exactly 0.4g → 0; above → -5 |
+| `computeSessionScore` | 9 | No events=100; scoring.md example=79; speed cap=40; braking cap=30; both caps → min 30; never negative; zero-penalty tracking; single violation |
+| `calculateRollingScore` | 8 | Empty=100; single; all-100; all-60; 2x weight on recent; 6th = 1x; >20 ignored; 2-session weighting |
+| `scoreTier` | 10 | All 5 tier boundaries + edge cases |
+
+#### Integration Tests (`integration/scoring.test.ts`) — 19 tests
+
+| # | Test | Expected |
+|---|---|---|
+| SCR-01 | POST /orders/:id/accept returns delivery_session_id | 200, delivery_session_id is UUID |
+| SCR-02 | Driver submits speed violation events | 201, events_recorded=2, penalties_triggered>0 |
+| SCR-03 | Driver submits harsh braking events | 201, events_recorded=2, penalties_triggered=2 |
+| SCR-04 | Sub-threshold braking → no penalty | 201, penalties_triggered=0 |
+| SCR-05 | POST /scoring/events: missing session_id | 400 |
+| SCR-06 | POST /scoring/events: requires driver | 403 for admin |
+| SCR-07 | POST /orders/:id/deliver triggers session_scores row | session_scores row exists after deliver |
+| SCR-08 | Admin manually calculates session score | 200, final_score in 0–100 |
+| SCR-09 | Speed violations reduce score (3×high → capped at 40) | final_score=60, speed_penalty=40 |
+| SCR-10 | Driver gets own session score | 200, session_id + breakdown present |
+| SCR-11 | GET /scoring/sessions/non-existent | 404 |
+| SCR-12 | GET /scoring/sessions/:id requires auth | 401 |
+| SCR-13 | GET /scoring/me returns rolling score + recent sessions | 200, recent_sessions[] |
+| SCR-14 | GET /scoring/me requires driver | 403 for admin |
+| SCR-15 | GET /scoring/me requires auth | 401 |
+| SCR-16 | Admin gets any driver's rolling score | 200, recent_sessions[] |
+| SCR-17 | Driver cannot use admin /scoring/drivers/:id | 403 |
+| SCR-18 | score_history updated after session finalized | row count increases |
+| SCR-19 | score_history.weighted_avg is 0–100 | valid numeric in range |
+
+---
+
 ## 3. Backend Socket Tests
 
 | Test | Scenario | Expected |
