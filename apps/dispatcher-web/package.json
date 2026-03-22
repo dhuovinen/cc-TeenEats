@@ -9,10 +9,12 @@
   },
   "dependencies": {
     "@vis.gl/react-google-maps": "^1.1.2",
+    "axios": "^1.13.5",
     "next": "14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
