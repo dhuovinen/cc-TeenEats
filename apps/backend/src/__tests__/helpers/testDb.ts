@@ -16,6 +16,8 @@ export async function resetDb(): Promise<void> {
     DROP TABLE IF EXISTS score_history CASCADE;
     DROP TABLE IF EXISTS session_scores CASCADE;
     DROP TABLE IF EXISTS driving_events CASCADE;
+    DROP TABLE IF EXISTS session_earnings CASCADE;
+    DROP TABLE IF EXISTS payouts CASCADE;
     DROP TABLE IF EXISTS compliance_violations CASCADE;
     DROP TABLE IF EXISTS work_sessions CASCADE;
     DROP TABLE IF EXISTS compliance_rules CASCADE;
