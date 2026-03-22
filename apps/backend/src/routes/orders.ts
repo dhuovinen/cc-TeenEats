@@ -27,6 +27,7 @@ import { db } from '../db';
 import { requireAuthV2, requireRole } from '../middleware/authV2';
 import { canStartSession, recordWorkTime, logViolation } from '../services/compliance';
 import { finalizeSessionScore } from '../services/scoringV1';
+import { computeAndSaveSessionEarnings } from '../services/payoutsV1';
 
 const router = Router();
 
@@ -415,6 +416,9 @@ router.post('/:id/deliver', requireAuthV2, requireRole('driver'), async (req: Re
     if (ds) {
       finalizeSessionScore(ds.id).catch(err =>
         console.error('[orders] finalizeSessionScore error:', err)
+      );
+      computeAndSaveSessionEarnings(ds.id).catch(err =>
+        console.error('[orders] computeAndSaveSessionEarnings error:', err)
       );
     }
     res.json({ order: updated });

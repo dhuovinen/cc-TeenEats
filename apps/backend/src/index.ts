@@ -15,6 +15,7 @@ import restaurantsRouter from './routes/restaurants';
 import ordersRouter from './routes/orders';
 import complianceRouter from './routes/compliance';
 import scoringRouter from './routes/scoring';
+import payoutsRouter from './routes/payouts';
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/restaurants', restaurantsRouter);
 app.use('/orders', ordersRouter);
 app.use('/compliance', complianceRouter);
 app.use('/scoring', scoringRouter);
+app.use('/payouts', payoutsRouter);
 
 const httpServer = http.createServer(app);
 initSocket(httpServer);

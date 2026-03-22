@@ -1,7 +1,7 @@
 # TeenEats — Test Results
 
 **Last updated**: 2026-03-22
-**Branch**: `mvp/module-05-scoring` (merged into `claude/teeneats-architecture-plan-QN4jr`)
+**Branch**: `mvp/module-06-payouts` (merged into `claude/teeneats-architecture-plan-QN4jr`)
 **Environment**: Linux, Node.js 22.22.0, PostgreSQL 16
 
 ---
@@ -24,7 +24,9 @@
 | Integration: Compliance | 19 | 19 | 0 | MVP M4 | ✅ PASS |
 | Unit: Scoring v1 logic | 44 | 44 | 0 | MVP M5 | ✅ PASS |
 | Integration: Scoring v1 | 19 | 19 | 0 | MVP M5 | ✅ PASS |
-| **Total** | **352** | **352** | **0** | | **✅ ALL PASS** |
+| Unit: Payouts v1 logic | 27 | 27 | 0 | MVP M6 | ✅ PASS |
+| Integration: Payouts v1 | 26 | 26 | 0 | MVP M6 | ✅ PASS |
+| **Total** | **405** | **405** | **0** | | **✅ ALL PASS** |
 
 ---
 
@@ -38,6 +40,7 @@
 | 2026-03-22 | `mvp/module-03-orders` | 226 | 226 | MVP Module 3 added (39 new tests) |
 | 2026-03-22 | `mvp/module-04-compliance` | 289 | 289 | MVP Module 4 added (63 new tests: 44 unit + 19 integration) |
 | 2026-03-22 | `mvp/module-05-scoring` | 352 | 352 | MVP Module 5 added (63 new tests: 44 unit + 19 integration) |
+| 2026-03-22 | `mvp/module-06-payouts` | 405 | 405 | MVP Module 6 added (53 new tests: 27 unit + 26 integration) |
 
 ---
 
@@ -53,7 +56,7 @@
 
 ---
 
-## Full Test Detail — Current Run (226 tests)
+## Full Test Detail — Current Run (405 tests)
 
 ### Unit: ETA service (`src/__tests__/unit/eta.test.ts`)
 
@@ -482,6 +485,71 @@
 | Driver cannot use admin /scoring/drivers/:id | ✅ |
 | score_history updated after session finalized | ✅ |
 | score_history.weighted_avg is 0–100 | ✅ |
+
+---
+
+### Unit: Payouts v1 logic (`src/__tests__/unit/payoutsV1.test.ts`) — MVP Module 6
+
+| Test | Result |
+|---|---|
+| BASE_SPLIT + BONUS_SPLIT = 1.0 | ✅ |
+| DEFAULT_DELIVERY_FEE_CENTS = 800 | ✅ |
+| calculateBonusPct: score 100 → 1.0 | ✅ |
+| calculateBonusPct: score 0 → 0.0 | ✅ |
+| calculateBonusPct: score 50 → 0.50 | ✅ |
+| calculateBonusPct: score 82 → 0.82 | ✅ |
+| calculateBonusPct: score 75 → 0.75 | ✅ |
+| calculateBonusPct: negative clamped to 0 | ✅ |
+| calculateBonusPct: >100 clamped to 1.0 | ✅ |
+| calculateBonusPct: score 33 → 0.33 | ✅ |
+| calculateSessionEarnings: score 100 = full fee ($8.00) | ✅ |
+| calculateSessionEarnings: score 0 = base only ($5.60) | ✅ |
+| calculateSessionEarnings: scoring.md example score 82 → driver $7.57, platform $0.43 | ✅ |
+| calculateSessionEarnings: score 70 → driver $7.28, platform $0.72 | ✅ |
+| calculateSessionEarnings: score 50 → driver $6.80, platform $1.20 | ✅ |
+| calculateSessionEarnings: fee/score echoed back, bonus_pct correct | ✅ |
+| calculateSessionEarnings: driver+platform=fee for scores 0,33,50,70,82,90,100 | ✅ |
+| calculateSessionEarnings: $12.00 fee × score 100 → driver 1200 | ✅ |
+| calculateSessionEarnings: $12.00 fee × score 0 → base only (840) | ✅ |
+| calculateSessionEarnings: driver always ≥ base_pay | ✅ |
+| calculateSessionEarnings: bonus_pay never exceeds max_bonus | ✅ |
+| formatCents: 0 → "$0.00" | ✅ |
+| formatCents: 800 → "$8.00" | ✅ |
+| formatCents: 757 → "$7.57" | ✅ |
+| formatCents: 1 → "$0.01" | ✅ |
+| formatCents: 1000 → "$10.00" | ✅ |
+| formatCents: 1234 → "$12.34" | ✅ |
+
+### Integration: Payouts v1 (`src/__tests__/integration/payouts.test.ts`) — MVP Module 6
+
+| Test | Result |
+|---|---|
+| session_earnings row created after order deliver | ✅ |
+| driver_pay + platform_cut = delivery_fee | ✅ |
+| base_pay is 70% of delivery_fee (560 cents) | ✅ |
+| GET /payouts/me/earnings: 200 with earnings array | ✅ |
+| GET /payouts/me/earnings: entries have expected fields | ✅ |
+| GET /payouts/me/earnings: 401 without token | ✅ |
+| GET /payouts/me/payouts: 200 with empty array | ✅ |
+| GET /payouts/me/payouts: 401 without token | ✅ |
+| POST /payouts/sessions/:id/calculate: admin recalculates | ✅ |
+| POST /payouts/sessions/:id/calculate: idempotent (UPSERT) | ✅ |
+| POST /payouts/sessions/:id/calculate: 404 for non-existent | ✅ |
+| POST /payouts/sessions/:id/calculate: 403 for driver | ✅ |
+| GET /payouts/drivers/:id/earnings: admin sees driver earnings | ✅ |
+| GET /payouts/drivers/:id/earnings: 403 for driver | ✅ |
+| POST /payouts/trigger: creates payout, 201 | ✅ |
+| POST /payouts/trigger: session_earnings marked paid | ✅ |
+| POST /payouts/trigger: second trigger returns null | ✅ |
+| POST /payouts/trigger: 403 for driver | ✅ |
+| POST /payouts/trigger: 400 missing fields | ✅ |
+| POST /payouts/trigger: 400 invalid date format | ✅ |
+| POST /payouts/trigger: 400 period_end before start | ✅ |
+| POST /payouts/:id/mark-paid: sets status=paid + stripe_transfer_id | ✅ |
+| POST /payouts/:id/mark-paid: 409 already paid | ✅ |
+| POST /payouts/:id/mark-paid: 404 not found | ✅ |
+| POST /payouts/:id/mark-paid: 403 for driver | ✅ |
+| GET /payouts/me/payouts after trigger: returns payout history | ✅ |
 
 ---
 

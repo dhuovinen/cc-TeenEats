@@ -490,6 +490,52 @@ Pure function tests (no DB/HTTP), reference: docs/scoring.md.
 
 ---
 
+### 2.10 Payouts v1 Tests — MVP Module 6
+
+#### Unit Tests (`unit/payoutsV1.test.ts`) — 27 tests
+
+Pure function tests (no DB/HTTP), reference: docs/scoring.md Pay Bonus section.
+
+| Function | Count | Boundary cases |
+|---|---|---|
+| `constants` | 2 | BASE_SPLIT+BONUS_SPLIT=1.0; DEFAULT_DELIVERY_FEE_CENTS=800 |
+| `calculateBonusPct` | 8 | 0→0.0; 50→0.50; 82→0.82; 100→1.0; negative clamped to 0; >100 clamped to 1.0; 33→0.33; 75→0.75 |
+| `calculateSessionEarnings` | 14 | score 100 = full fee; score 0 = base only; scoring.md example ($8.00×82=driver $7.57, platform $0.43); score 70; score 50; fee/score echoed; driver+platform=fee invariant; $12.00 fee×100; $12.00 fee×0; driver always ≥ base; bonus ≤ max_bonus |
+| `formatCents` | 6 | 0→"$0.00"; 800→"$8.00"; 757→"$7.57"; 1→"$0.01"; 1000→"$10.00"; 1234→"$12.34" |
+
+#### Integration Tests (`integration/payouts.test.ts`) — 26 tests
+
+| ID | Scenario | Expected |
+|---|---|---|
+| PAY-01 | session_earnings row created after order deliver | row exists in DB |
+| PAY-02 | driver_pay + platform_cut = delivery_fee | fee invariant holds |
+| PAY-03 | base_pay is 70% of fee | 560 cents for $8.00 fee |
+| PAY-04 | GET /payouts/me/earnings: driver sees own earnings | 200, earnings[] |
+| PAY-05 | GET /payouts/me/earnings: has expected fields | session_id, base_pay_cents, etc. |
+| PAY-06 | GET /payouts/me/earnings: requires auth | 401 without token |
+| PAY-07 | GET /payouts/me/payouts: returns array | 200, payouts[] |
+| PAY-08 | GET /payouts/me/payouts: requires auth | 401 |
+| PAY-09 | Admin POST /payouts/sessions/:id/calculate | 200, earning row returned |
+| PAY-10 | Recalculate is idempotent (UPSERT) | same session_id both times |
+| PAY-11 | Calculate non-existent session | 404 |
+| PAY-12 | Driver cannot call calculate | 403 |
+| PAY-13 | Admin GET /payouts/drivers/:id/earnings | 200, earnings[] |
+| PAY-14 | Driver cannot see other driver earnings | 403 |
+| PAY-15 | POST /payouts/trigger: admin creates payout | 201, payout with total_cents > 0 |
+| PAY-16 | After trigger: session_earnings status = paid | 0 pending rows |
+| PAY-17 | Second trigger same period: no pending earnings | 200, payout=null |
+| PAY-18 | POST /payouts/trigger: driver gets 403 | 403 |
+| PAY-19 | POST /payouts/trigger: missing fields | 400 |
+| PAY-20 | POST /payouts/trigger: invalid date format | 400 |
+| PAY-21 | POST /payouts/trigger: period_end before start | 400 |
+| PAY-22 | POST /payouts/:id/mark-paid: sets status=paid | 200, stripe_transfer_id set |
+| PAY-23 | Mark already-paid payout | 409 |
+| PAY-24 | Mark non-existent payout | 404 |
+| PAY-25 | Driver cannot mark paid | 403 |
+| PAY-26 | GET /payouts/me/payouts after trigger | returns ≥1 payout with period fields |
+
+---
+
 ## 3. Backend Socket Tests
 
 | Test | Scenario | Expected |
