@@ -321,6 +321,89 @@ Manual test cases are documented in sections 4–6.
 | Missing key field | PUT /settings | { value only } | 400 |
 | No dispatcher key | PUT /settings | — | 401 |
 
+### 2.7 Order Lifecycle Integration Tests (`orders.test.ts`)
+
+**Module 3 — 39 tests**
+
+#### Place Order (POST /orders)
+
+| # | Test | Role | Input | Expected |
+|---|---|---|---|---|
+| ORD-01 | Valid order | customer | restaurant_id, items, delivery_address | 201, order.status='placed', total_cents correct |
+| ORD-02 | Multi-item total | customer | 2 different items with quantities | 201, total_cents = sum of (price × qty) |
+| ORD-03 | Empty items array | customer | items: [] | 400 |
+| ORD-04 | Missing delivery_address | customer | no delivery_address | 400 |
+| ORD-05 | Invalid menu_item_id | customer | non-existent UUID | 400 — invalid or unavailable |
+| ORD-06 | Invalid restaurant_id | customer | non-existent UUID | 404 |
+| ORD-07 | Quantity 0 | customer | quantity: 0 | 400 |
+| ORD-08 | Driver tries to place | driver | valid body | 403 |
+| ORD-09 | Unauthenticated | none | valid body | 401 |
+
+#### Get Order / My Orders (GET /orders)
+
+| # | Test | Role | Input | Expected |
+|---|---|---|---|---|
+| ORD-10 | Get own order | customer | GET /orders/:id | 200, order + items |
+| ORD-11 | Other customer's order | customer2 | GET /orders/:id belonging to customer1 | 403 |
+| ORD-12 | My orders list | customer | GET /orders/mine | 200, orders[], restaurant_name present |
+| ORD-13 | Non-existent order | customer | GET /orders/00000…0 | 404 |
+
+#### Full Happy Path
+
+| # | Test | Role | Action | Expected |
+|---|---|---|---|---|
+| ORD-14 | Confirm placed order | admin | POST /orders/:id/confirm | 200, status='confirmed', confirmed_at set |
+| ORD-15 | Mark ready for pickup | admin | POST /orders/:id/ready | 200, status='ready_for_pickup', ready_at set |
+| ORD-16 | Available orders visible | driver | GET /orders/available | 200, order in list with restaurant_name |
+| ORD-17 | Driver accepts | driver | POST /orders/:id/accept | 200, status='assigned', assigned_at set |
+| ORD-18 | Delivery session created | — | DB check after accept | delivery_sessions row exists with driver_id |
+| ORD-19 | Driver picks up | driver | POST /orders/:id/pickup | 200, status='picked_up', picked_up_at set |
+| ORD-20 | Session picked_up_at updated | — | DB check after pickup | delivery_sessions.picked_up_at not null |
+| ORD-21 | Driver delivers | driver | POST /orders/:id/deliver (distance_km, duration_minutes) | 200, status='delivered', delivered_at set |
+| ORD-22 | Session completion recorded | — | DB check after deliver | completed_at, distance_km=3.5, duration_minutes=12 |
+
+#### State Transition Violations
+
+| # | Test | Expected |
+|---|---|---|
+| ORD-23 | Confirm already-confirmed | 409 |
+| ORD-24 | Mark ready before confirmed | 409 |
+| ORD-25 | Accept a placed (not-ready) order | 409 |
+| ORD-26 | Pickup before accepting (no driver_id set) | 403 (driver doesn't own unaccepted order) |
+| ORD-27 | Deliver before pickup | 409 |
+
+#### Cancellation
+
+| # | Test | Expected |
+|---|---|---|
+| ORD-28 | Cancel a placed order | 200, status='cancelled', cancel_reason preserved |
+| ORD-29 | Cancel after confirmed | 409 — reason includes 'confirmed' |
+| ORD-30 | Other customer cancels | 403 |
+
+#### Race Condition
+
+| # | Test | Expected |
+|---|---|---|
+| ORD-31 | Two drivers accept simultaneously | One gets 200, other gets 409; exactly one driver_id set |
+
+#### Role-based Access Control
+
+| # | Test | Expected |
+|---|---|---|
+| ORD-32 | Driver cannot confirm | 403 |
+| ORD-33 | Customer cannot accept | 403 |
+| ORD-34 | Driver cannot view another driver's assigned order | 403 |
+| ORD-35 | GET /orders/restaurant/:rid requires admin | 403 for customer |
+| ORD-36 | GET /orders/available requires driver | 403 for customer |
+| ORD-37 | Unauthenticated → any route | 401 |
+
+#### Admin: Restaurant Orders
+
+| # | Test | Expected |
+|---|---|---|
+| ORD-38 | List all orders for restaurant | 200, orders[] |
+| ORD-39 | Filter by status | 200, all orders in result have matching status |
+
 ---
 
 ## 3. Backend Socket Tests

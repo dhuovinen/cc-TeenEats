@@ -1,7 +1,7 @@
 # TeenEats — Test Results
 
 **Last updated**: 2026-03-22
-**Branch**: `mvp/module-01-foundation` (merged into `claude/teeneats-architecture-plan-QN4jr`)
+**Branch**: `mvp/module-03-orders` (merged into `claude/teeneats-architecture-plan-QN4jr`)
 **Environment**: Linux, Node.js 22.22.0, PostgreSQL 16
 
 ---
@@ -19,7 +19,8 @@
 | Integration: Deliveries | 28 | 28 | 0 | Alpha | ✅ PASS |
 | Integration: Settings | 10 | 10 | 0 | Alpha | ✅ PASS |
 | Integration: Restaurants | 45 | 45 | 0 | MVP M2 | ✅ PASS |
-| **Total** | **187** | **187** | **0** | | **✅ ALL PASS** |
+| Integration: Orders | 39 | 39 | 0 | MVP M3 | ✅ PASS |
+| **Total** | **226** | **226** | **0** | | **✅ ALL PASS** |
 
 ---
 
@@ -30,6 +31,7 @@
 | 2026-03-21 | `claude/teeneats-architecture-plan-QN4jr` | 87 | 87 | Alpha suite complete |
 | 2026-03-22 | `mvp/module-01-foundation` | 142 | 142 | MVP Module 1 added (55 new tests) |
 | 2026-03-22 | `mvp/module-02-restaurants` | 187 | 187 | MVP Module 2 added (45 new tests) |
+| 2026-03-22 | `mvp/module-03-orders` | 226 | 226 | MVP Module 3 added (39 new tests) |
 
 ---
 
@@ -45,7 +47,7 @@
 
 ---
 
-## Full Test Detail — Current Run (142 tests)
+## Full Test Detail — Current Run (226 tests)
 
 ### Unit: ETA service (`src/__tests__/unit/eta.test.ts`)
 
@@ -278,6 +280,52 @@
 | DELETE menu-items/:id: → 200, deleted=true | ✅ |
 | DELETE menu-items/:id: already-deleted → 404 | ✅ |
 | POST items: non-admin → 403 | ✅ |
+
+---
+
+### Integration: Orders (`src/__tests__/integration/orders.test.ts`) — MVP Module 3
+
+| Test | Result |
+|---|---|
+| customer can place a valid order | ✅ |
+| calculates total_cents correctly for multi-item order | ✅ |
+| rejects order with no items | ✅ |
+| rejects order missing delivery_address | ✅ |
+| rejects order with invalid menu_item_id | ✅ |
+| rejects order with invalid restaurant_id | ✅ |
+| rejects order with invalid quantity (0) | ✅ |
+| requires customer role | ✅ |
+| rejects unauthenticated request | ✅ |
+| customer can get their own order | ✅ |
+| customer cannot get another customer's order | ✅ |
+| GET /orders/mine returns customer's orders | ✅ |
+| returns 404 for non-existent order | ✅ |
+| admin can confirm a placed order | ✅ |
+| admin can mark confirmed order as ready_for_pickup | ✅ |
+| driver can see available orders | ✅ |
+| driver can accept a ready_for_pickup order | ✅ |
+| delivery session is created on accept | ✅ |
+| driver can mark order as picked_up | ✅ |
+| delivery session picked_up_at is updated | ✅ |
+| driver can mark order as delivered | ✅ |
+| delivery session completed_at, distance_km, duration_minutes are recorded | ✅ |
+| cannot confirm an already-confirmed order | ✅ |
+| cannot mark ready before confirmed | ✅ |
+| cannot accept a placed (not ready) order | ✅ |
+| cannot pickup before accepting (driver does not own unaccepted order → 403) | ✅ |
+| cannot deliver before pickup | ✅ |
+| customer can cancel a placed order | ✅ |
+| customer cannot cancel an already-confirmed order | ✅ |
+| customer cannot cancel another customer's order | ✅ |
+| only one driver can accept the same order (race condition) | ✅ |
+| driver cannot confirm an order | ✅ |
+| customer cannot accept an order | ✅ |
+| driver cannot view another driver's assigned order directly | ✅ |
+| GET /orders/restaurant/:rid requires admin | ✅ |
+| GET /orders/available requires driver | ✅ |
+| unauthenticated request to any route returns 401 | ✅ |
+| admin can list all orders for a restaurant | ✅ |
+| can filter by status | ✅ |
 
 ---
 

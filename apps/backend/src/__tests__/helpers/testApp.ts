@@ -12,6 +12,7 @@ import driversRouter from '../../routes/drivers';
 import deliveriesRouter from '../../routes/deliveries';
 import settingsRouter from '../../routes/settings';
 import restaurantsRouter from '../../routes/restaurants';
+import ordersRouter from '../../routes/orders';
 
 export function buildApp() {
   const app = express();
@@ -25,6 +26,7 @@ export function buildApp() {
   app.use('/deliveries', deliveriesRouter);
   app.use('/settings', settingsRouter);
   app.use('/restaurants', restaurantsRouter);
+  app.use('/orders', ordersRouter);
 
   const httpServer = http.createServer(app);
   initSocket(httpServer);
