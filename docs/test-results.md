@@ -1,7 +1,7 @@
 # TeenEats — Test Results
 
 **Last updated**: 2026-03-22
-**Branch**: `mvp/module-04-compliance` (merged into `claude/teeneats-architecture-plan-QN4jr`)
+**Branch**: `mvp/module-05-scoring` (merged into `claude/teeneats-architecture-plan-QN4jr`)
 **Environment**: Linux, Node.js 22.22.0, PostgreSQL 16
 
 ---
@@ -22,7 +22,9 @@
 | Integration: Orders | 39 | 39 | 0 | MVP M3 | ✅ PASS |
 | Unit: Compliance logic | 44 | 44 | 0 | MVP M4 | ✅ PASS |
 | Integration: Compliance | 19 | 19 | 0 | MVP M4 | ✅ PASS |
-| **Total** | **289** | **289** | **0** | | **✅ ALL PASS** |
+| Unit: Scoring v1 logic | 44 | 44 | 0 | MVP M5 | ✅ PASS |
+| Integration: Scoring v1 | 19 | 19 | 0 | MVP M5 | ✅ PASS |
+| **Total** | **352** | **352** | **0** | | **✅ ALL PASS** |
 
 ---
 
@@ -35,6 +37,7 @@
 | 2026-03-22 | `mvp/module-02-restaurants` | 187 | 187 | MVP Module 2 added (45 new tests) |
 | 2026-03-22 | `mvp/module-03-orders` | 226 | 226 | MVP Module 3 added (39 new tests) |
 | 2026-03-22 | `mvp/module-04-compliance` | 289 | 289 | MVP Module 4 added (63 new tests: 44 unit + 19 integration) |
+| 2026-03-22 | `mvp/module-05-scoring` | 352 | 352 | MVP Module 5 added (63 new tests: 44 unit + 19 integration) |
 
 ---
 
@@ -404,6 +407,81 @@
 | Admin lists violations | ✅ |
 | GET /compliance/violations requires admin | ✅ |
 | Work time accumulates across two records (sum=150) | ✅ |
+
+---
+
+### Unit: Scoring v1 logic (`src/__tests__/unit/scoringV1.test.ts`) — MVP Module 5
+
+| Test | Result |
+|---|---|
+| kphToMph: 0 kph = 0 mph | ✅ |
+| kphToMph: 100 kph ≈ 62.1 mph | ✅ |
+| kphToMph: 16.09 kph ≈ 10 mph | ✅ |
+| classifySpeedViolation: 0 mph over → no penalty | ✅ |
+| classifySpeedViolation: negative → no penalty | ✅ |
+| classifySpeedViolation: 1 mph over → low (-3) | ✅ |
+| classifySpeedViolation: 10 mph over → low (-3) | ✅ |
+| classifySpeedViolation: 11 mph over → medium (-8) | ✅ |
+| classifySpeedViolation: 20 mph over → medium (-8) | ✅ |
+| classifySpeedViolation: 21 mph over → high (-20) | ✅ |
+| classifySpeedViolation: 50 mph over → high (-20) | ✅ |
+| classifyBrakingPenalty: 0.0g → 0 | ✅ |
+| classifyBrakingPenalty: 0.3g → 0 | ✅ |
+| classifyBrakingPenalty: 0.39g → 0 | ✅ |
+| classifyBrakingPenalty: exactly 0.4g → 0 (strict >) | ✅ |
+| classifyBrakingPenalty: 0.41g → -5 | ✅ |
+| classifyBrakingPenalty: 0.5g → -5 | ✅ |
+| classifyBrakingPenalty: 1.0g → -5 | ✅ |
+| computeSessionScore: no events → 100 | ✅ |
+| computeSessionScore: scoring.md example → 79 | ✅ |
+| computeSessionScore: speed cap at 40 | ✅ |
+| computeSessionScore: braking cap at 30 | ✅ |
+| computeSessionScore: both caps → score 30 | ✅ |
+| computeSessionScore: score never below 0 | ✅ |
+| computeSessionScore: zero-penalty entries tracked but not counted | ✅ |
+| computeSessionScore: single high violation → 80 | ✅ |
+| calculateRollingScore: empty → 100 | ✅ |
+| calculateRollingScore: single session | ✅ |
+| calculateRollingScore: 5 sessions all 100 | ✅ |
+| calculateRollingScore: 5 sessions all 60 | ✅ |
+| calculateRollingScore: most recent gets 2x weight | ✅ |
+| calculateRollingScore: 6th session gets 1x weight | ✅ |
+| calculateRollingScore: beyond 20 sessions ignored | ✅ |
+| calculateRollingScore: 2 sessions weighted correctly | ✅ |
+| scoreTier: 100 → Excellent | ✅ |
+| scoreTier: 90 → Excellent | ✅ |
+| scoreTier: 89 → Good | ✅ |
+| scoreTier: 75 → Good | ✅ |
+| scoreTier: 74 → Fair | ✅ |
+| scoreTier: 60 → Fair | ✅ |
+| scoreTier: 59 → Needs Improvement | ✅ |
+| scoreTier: 40 → Needs Improvement | ✅ |
+| scoreTier: 39 → Poor | ✅ |
+| scoreTier: 0 → Poor | ✅ |
+
+### Integration: Scoring v1 (`src/__tests__/integration/scoring.test.ts`) — MVP Module 5
+
+| Test | Result |
+|---|---|
+| POST /orders/:id/accept returns delivery_session_id | ✅ |
+| Driver submits speed violation events | ✅ |
+| Driver submits harsh braking events | ✅ |
+| Sub-threshold braking events trigger no penalty | ✅ |
+| POST /scoring/events: missing session_id → 400 | ✅ |
+| POST /scoring/events: requires driver role | ✅ |
+| POST /orders/:id/deliver triggers session_scores row | ✅ |
+| Admin manually calculates session score | ✅ |
+| Speed violations reduce score: 3×high → capped at 40, score=60 | ✅ |
+| Driver gets own session score | ✅ |
+| GET /scoring/sessions/non-existent → 404 | ✅ |
+| GET /scoring/sessions/:id requires auth | ✅ |
+| GET /scoring/me returns rolling score + recent sessions | ✅ |
+| GET /scoring/me requires driver | ✅ |
+| GET /scoring/me requires auth | ✅ |
+| Admin gets any driver rolling score | ✅ |
+| Driver cannot use admin /scoring/drivers/:id | ✅ |
+| score_history updated after session finalized | ✅ |
+| score_history.weighted_avg is 0–100 | ✅ |
 
 ---
 
