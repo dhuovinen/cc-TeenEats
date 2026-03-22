@@ -1,7 +1,7 @@
 # TeenEats — Test Results
 
 **Last updated**: 2026-03-22
-**Branch**: `mvp/module-03-orders` (merged into `claude/teeneats-architecture-plan-QN4jr`)
+**Branch**: `mvp/module-04-compliance` (merged into `claude/teeneats-architecture-plan-QN4jr`)
 **Environment**: Linux, Node.js 22.22.0, PostgreSQL 16
 
 ---
@@ -20,7 +20,9 @@
 | Integration: Settings | 10 | 10 | 0 | Alpha | ✅ PASS |
 | Integration: Restaurants | 45 | 45 | 0 | MVP M2 | ✅ PASS |
 | Integration: Orders | 39 | 39 | 0 | MVP M3 | ✅ PASS |
-| **Total** | **226** | **226** | **0** | | **✅ ALL PASS** |
+| Unit: Compliance logic | 44 | 44 | 0 | MVP M4 | ✅ PASS |
+| Integration: Compliance | 19 | 19 | 0 | MVP M4 | ✅ PASS |
+| **Total** | **289** | **289** | **0** | | **✅ ALL PASS** |
 
 ---
 
@@ -32,6 +34,7 @@
 | 2026-03-22 | `mvp/module-01-foundation` | 142 | 142 | MVP Module 1 added (55 new tests) |
 | 2026-03-22 | `mvp/module-02-restaurants` | 187 | 187 | MVP Module 2 added (45 new tests) |
 | 2026-03-22 | `mvp/module-03-orders` | 226 | 226 | MVP Module 3 added (39 new tests) |
+| 2026-03-22 | `mvp/module-04-compliance` | 289 | 289 | MVP Module 4 added (63 new tests: 44 unit + 19 integration) |
 
 ---
 
@@ -326,6 +329,81 @@
 | unauthenticated request to any route returns 401 | ✅ |
 | admin can list all orders for a restaurant | ✅ |
 | can filter by status | ✅ |
+
+---
+
+### Unit: Compliance logic (`src/__tests__/unit/compliance.test.ts`) — MVP Module 4
+
+| Test | Result |
+|---|---|
+| January is school year | ✅ |
+| May 31 is school year | ✅ |
+| June 1 is summer | ✅ |
+| July is summer | ✅ |
+| August is summer | ✅ |
+| September 1 (before Labor Day) is summer | ✅ |
+| day after Labor Day 2025 (Sep 2) is school year | ✅ |
+| October is school year | ✅ |
+| December is school year | ✅ |
+| Monday during school year is a school day | ✅ |
+| Friday during school year is a school day | ✅ |
+| Saturday during school year is NOT a school day | ✅ |
+| Sunday during school year is NOT a school day | ✅ |
+| Monday during summer is NOT a school day | ✅ |
+| Sunday during school year is a school night | ✅ |
+| Thursday during school year is a school night | ✅ |
+| Friday during school year is NOT a school night | ✅ |
+| Saturday during school year is NOT a school night | ✅ |
+| Monday during summer is NOT a school night | ✅ |
+| Wednesday returns previous Monday (getWeekStart) | ✅ |
+| Monday returns same day (getWeekStart) | ✅ |
+| Sunday returns previous Monday (getWeekStart) | ✅ |
+| TX: always allowed regardless of hours worked | ✅ |
+| TX: allowed even at 300 daily minutes | ✅ |
+| TX: allowed at curfew time (no TX curfew) | ✅ |
+| CA: allowed at 0 minutes on school morning | ✅ |
+| CA: blocked at daily cap (240 mins = 4hrs) on school day | ✅ |
+| CA: allowed at 239 minutes on school day | ✅ |
+| CA: blocked past 10pm school night curfew | ✅ |
+| CA: allowed at 9pm on school night (before curfew) | ✅ |
+| CA: blocked before 5am start restriction | ✅ |
+| CA: allowed exactly at 5am start time | ✅ |
+| CA: non-school day has 480 min (8hr) cap | ✅ |
+| CA: summer weekly cap (2880 = 48hrs) blocks when reached | ✅ |
+| CA: midnight-crossing curfew: 12:45am blocked on non-school night | ✅ |
+| CA: 11pm on Friday (non-school night) before 00:30 curfew → allowed | ✅ |
+| NY: blocked at weekly school cap (1680 = 28hrs) | ✅ |
+| NY: allowed at 1679 weekly minutes | ✅ |
+| NY: blocked at daily school cap (240 mins) | ✅ |
+| NY: school night curfew 10pm blocks at 10:01pm | ✅ |
+| NY: non-school night midnight blocks at exactly midnight | ✅ |
+| NY: summer applies weekly_summer_minutes (2880) not school cap | ✅ |
+| returns correct metadata on allowed result | ✅ |
+| returns correct metadata on blocked result | ✅ |
+
+### Integration: Compliance (`src/__tests__/integration/compliance.test.ts`) — MVP Module 4
+
+| Test | Result |
+|---|---|
+| TX driver with no work hours is allowed (no caps) | ✅ |
+| CA driver with no work hours is allowed | ✅ |
+| GET /compliance/status requires driver role | ✅ |
+| Unauthenticated → 401 | ✅ |
+| Admin records work minutes for driver | ✅ |
+| Recorded minutes appear in compliance status | ✅ |
+| Record: missing driver_id → 400 | ✅ |
+| Record: non-positive minutes → 400 | ✅ |
+| Record: requires admin role | ✅ |
+| TX driver can always accept (600 min recorded, no cap) | ✅ |
+| NY driver blocked when at school week cap | ✅ |
+| Admin lists all state rules (6 states seeded) | ✅ |
+| Admin gets CA rule (daily_school_day_minutes=240) | ✅ |
+| Unknown state rule → 404 | ✅ |
+| GET /compliance/rules requires admin | ✅ |
+| TX rule has null caps | ✅ |
+| Admin lists violations | ✅ |
+| GET /compliance/violations requires admin | ✅ |
+| Work time accumulates across two records (sum=150) | ✅ |
 
 ---
 

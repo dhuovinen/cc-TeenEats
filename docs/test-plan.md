@@ -406,6 +406,49 @@ Manual test cases are documented in sections 4–6.
 
 ---
 
+### 2.8 Compliance Engine Tests — MVP Module 4
+
+#### Unit Tests (`unit/compliance.test.ts`) — 44 tests
+
+Pure function tests (no DB/HTTP).
+
+| Group | # Tests | Description |
+|---|---|---|
+| `isSchoolYear` | 9 | Jan–May school year; Jun–Aug summer; Sep straddles Labor Day; Oct–Dec school year |
+| `isSchoolDay` | 5 | Mon–Fri during school year = school day; weekends/summer = non-school |
+| `isSchoolNight` | 5 | Sun–Thu during school year = school night; Fri–Sat/summer = non-school night |
+| `getWeekStart` | 3 | Week starts Monday; Wednesday → preceding Monday |
+| TX (no limits) | 3 | Always allowed: high hours, curfew time, extreme daily values |
+| CA | 11 | 4hr school day cap, 239 min allowed, 10pm curfew, before curfew, 5am start, 8hr non-school, 48hr summer cap, midnight-crossing "00:30" curfew edge cases |
+| NY | 6 | 28hr school week cap, 4hr daily cap, 10pm school night, midnight non-school, summer uses 48hr cap |
+| Result structure | 2 | Correct shape for allowed and blocked results |
+
+#### Integration Tests (`integration/compliance.test.ts`) — 19 tests
+
+| # | Test | Expected |
+|---|---|---|
+| CMP-01 | TX driver status: no work hours, no caps | 200, allowed=true, all limits null |
+| CMP-02 | CA driver status: no work hours | 200, allowed=true |
+| CMP-03 | GET /compliance/status requires driver | 403 for customer |
+| CMP-04 | Unauthenticated → 401 | 401 |
+| CMP-05 | Admin records work minutes | 200, ok=true |
+| CMP-06 | Recorded minutes appear in status | daily + weekly updated |
+| CMP-07 | Record: missing driver_id | 400 |
+| CMP-08 | Record: non-positive minutes | 400 |
+| CMP-09 | Record: requires admin | 403 for driver |
+| CMP-10 | TX driver accepts after 600 min recorded (no cap) | 200 on order accept |
+| CMP-11 | NY driver blocked when at school week cap | 403 on order accept, compliance block |
+| CMP-12 | Admin lists all state rules | 200, rules[], TX/CA/NY present |
+| CMP-13 | Admin gets CA rule | 200, daily_school_day_minutes=240 |
+| CMP-14 | Unknown state rule | 404 |
+| CMP-15 | GET /compliance/rules requires admin | 403 for driver |
+| CMP-16 | TX rule has null caps | all limits null |
+| CMP-17 | Admin lists violations | 200, violations[] |
+| CMP-18 | GET /compliance/violations requires admin | 403 for driver |
+| CMP-19 | Work time accumulates across two records | daily=150, weekly=150 |
+
+---
+
 ## 3. Backend Socket Tests
 
 | Test | Scenario | Expected |
